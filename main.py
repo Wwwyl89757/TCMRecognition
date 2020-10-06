@@ -30,15 +30,15 @@ import tcm
 
 
 maxlen = 250
-epochs = 7
-batch_size = 16
-bert_layers = 12
+epochs = 10
+batch_size = 1
+bert_layers = 24
 learing_rate = 1e-5  # bert_layers越小，学习率应该要越大
 crf_lr_multiplier = 1000  # 必要时扩大CRF层的学习率
 
-config_path = './chinese_wwm_L-12_H-768_A-12/bert_config.json'
-checkpoint_path = './chinese_wwm_L-12_H-768_A-12/bert_model.ckpt'
-dict_path = './chinese_wwm_L-12_H-768_A-12/vocab.txt'
+config_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_config.json'
+checkpoint_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_model.ckpt'
+dict_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/vocab.txt'
 
 # print(tf.test.is_gpu_available())
 # print(tf.config.list_physical_devices('GPU'))
