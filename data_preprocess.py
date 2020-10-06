@@ -2,20 +2,29 @@ import glob
 from sklearn.model_selection import train_test_split
 import os
 import codecs
+import shutil
 
 
 text_length = 250
 file_list = glob.glob('./round1_train/train/*.txt')
 
 # # 划分训练集和验证集
-train_filelist, val_filelist = train_test_split(file_list,test_size=0.2,random_state=666)
+train_filelist, val_filelist = train_test_split(file_list,test_size=0.2,random_state=222)
 
 # get_ipython().system('mkdir  ./round1_train/train_new/')
 # get_ipython().system('mkdir ./round1_train/val_new/')
-if not os.path.exists('./round1_train/train_new/'):
-    os.mkdir('./round1_train/train_new/')
-if not os.path.exists('./round1_train/val_new/'):
-    os.mkdir('./round1_train/val_new/')
+if os.path.exists('./round1_train/train_new/'):
+    shutil.rmtree('./round1_train/train_new/')
+
+if os.path.exists('./round1_train/val_new/'):
+    shutil.rmtree('./round1_train/val_new/')
+
+if os.path.exists('./round1_train/val_data/'):
+    shutil.rmtree('./round1_train/val_data/')
+
+os.mkdir('./round1_train/train_new/')
+os.mkdir('./round1_train/val_new/')
+os.mkdir('./round1_train/val_data/')
 
 def _cut(sentence):
     """
@@ -149,6 +158,9 @@ for file in val_filelist:
 # # 训练集合并
 
 w_path = "./round1_train/data/train.txt"
+with codecs.open(w_path, 'w', encoding='utf-8') as f:
+    f.seek(0)  # 移动文件读取指针到指定位置
+    f.truncate()  # 写入前先清空之前的文件内容
 for file in os.listdir('./round1_train/train_new/'):
     path = os.path.join("./round1_train/train_new", file)
     if not file.endswith(".txt"):
@@ -163,7 +175,7 @@ for file in os.listdir('./round1_train/train_new/'):
             line = f.readline()
             line = line.strip("\n\r")
     print("开始写入文本%s" % w_path)
-    with codecs.open(w_path, "a", encoding="utf-8") as f:       # 将train_new中的text合并写入data/train，覆盖写入
+    with codecs.open(w_path, "a", encoding="utf-8") as f:       # 将train_new中的text合并写入data/train，追加写入
         for item in q_list:
             if item.__contains__('\ufeff1'):
                 print("===============")
@@ -175,12 +187,15 @@ for file in os.listdir('./round1_train/train_new/'):
 
 
 w_path = "./round1_train/data/val.txt"
+with codecs.open(w_path, 'w', encoding='utf-8') as f:
+    f.seek(0)  # 移动文件读取指针到指定位置
+    f.truncate()  # 写入前先清空之前的文件内容
 for file in os.listdir('./round1_train/val_new/'):
     path = os.path.join("./round1_train/val_new", file)
     if not file.endswith(".txt"):
         continue
     q_list = []
-
+    print("开始读取文件:%s" % file)
     with codecs.open(path, "r", encoding="utf-8") as f:
         line = f.readline()
         line = line.strip("\n\r")
@@ -188,7 +203,7 @@ for file in os.listdir('./round1_train/val_new/'):
             q_list.append(line)
             line = f.readline()
             line = line.strip("\n\r")
-
+    print("开始写入文本%s" % w_path)
     with codecs.open(w_path, "a", encoding="utf-8") as f:
         for item in q_list:
             if item.__contains__('\ufeff1'):
@@ -203,6 +218,8 @@ for file in os.listdir('./round1_train/val_new/'):
 for file in val_filelist:
     file_name = file.split('\\')[-1].split('.')[0]
     r_ann_path = os.path.join("./round1_train/train", "%s.ann" % file_name)
-    os.system("cp %s %s" % (file, "./round1_train/val_data"))               # 将验证集对应.txt文件复制到val_data
-    os.system("cp %s %s" % (r_ann_path, "./round1_train/val_data"))         # 将验证集对应.ann文件复制到val_data
-    print(file)
+    # os.system("cp %s %s" % (file, "./round1_train/val_data"))               # 将验证集对应.txt文件复制到val_data
+    # os.system("cp %s %s" % (r_ann_path, "./round1_train/val_data"))         # 将验证集对应.ann文件复制到val_data
+    shutil.copy(file, "./round1_train/val_data")
+    shutil.copy(r_ann_path, "./round1_train/val_data")
+    # print(file)

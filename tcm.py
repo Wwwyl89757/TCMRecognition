@@ -47,6 +47,6 @@ class TCM:
                     else:
                         d[-1][0] += char
                     last_flag = this_flag
-                D.append(d)  # 将字符根据BOIE拼接成实体保存至列表
+                D.append(d)  # 将字符根据BOI拼接成实体保存至列表
         return D
 

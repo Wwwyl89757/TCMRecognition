@@ -30,16 +30,15 @@ import tcm
 
 
 maxlen = 250
-epochs = 10
-batch_size = 10
+epochs = 7
+batch_size = 16
 bert_layers = 12
 learing_rate = 1e-5  # bert_layers越小，学习率应该要越大
 crf_lr_multiplier = 1000  # 必要时扩大CRF层的学习率
 
-# bert配置
-config_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_config.json'
-checkpoint_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_model.ckpt'
-dict_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/vocab.txt'
+config_path = './chinese_wwm_L-12_H-768_A-12/bert_config.json'
+checkpoint_path = './chinese_wwm_L-12_H-768_A-12/bert_model.ckpt'
+dict_path = './chinese_wwm_L-12_H-768_A-12/vocab.txt'
 
 # print(tf.test.is_gpu_available())
 # print(tf.config.list_physical_devices('GPU'))
@@ -51,7 +50,7 @@ loader = tcm.TCM()
 
 
 def train():
-    train_data = loader.load_data('./round1_train/data/train.txt')  # 三维列表，第一个维度为句子个数，另外是实体和对应类别
+    train_data = loader.load_data('./round1_train/data/train.txt')  # 第一个维度为所有训练样本中句子个数，第二个维度是每个句子所包含的(实体，类别)数
     valid_data = loader.load_data('./round1_train/data/val.txt')
 
     global train_generator
@@ -66,7 +65,7 @@ def train():
 
     output_layer = 'Transformer-%s-FeedForward-Norm' % (bert_layers - 1)
     output = model.get_layer(output_layer).output  # shape=(None, None, 768)
-    output = Dense(loader.num_labels)(output)      # 27分类，shape=(None, None, 27)
+    output = Dense(loader.num_labels)(output)      # 27分类，13类*(B+I)+O
 
     output = CRF(output)
 
@@ -158,7 +157,7 @@ def predict_test(data, NER_):
                 ans["label_type"] = tn[1]
                 ans['overlap'] = "T" + str(index)
 
-                ans["start_pos"] = text.find(tn[0], posit)
+                ans["start_pos"] = text.find(tn[0], posit)      # 避免相同实体的位置错乱
                 ans["end_pos"] = ans["start_pos"] + len(tn[0])
                 posit = ans["end_pos"]
                 ans["res"] = tn[0]
