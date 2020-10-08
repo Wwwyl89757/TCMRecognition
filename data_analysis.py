@@ -82,27 +82,6 @@ for file in os.listdir('./round1_test/chusai_xuanshou/'):
             
 
 
-# In[14]:
-
-
-content_length = pd.Series(content_length)
-
-
-# In[15]:
-
-
-content_length[content_length>500].shape
-
-
-# In[16]:
-
-
-content_length[content_length>500]
-
-
-# In[17]:
-
-
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib

@@ -24,21 +24,22 @@ import generator
 import models
 import evaluator
 import tcm
+from data_preprocess import cut_test_set
 # import tensorflow.compat.v1 as tf  # 使用1.0版本的方法
 #
 # tf.disable_v2_behavior()  # 禁用2.0版本的方法
 
 
-maxlen = 250
-epochs = 10
-batch_size = 1
-bert_layers = 24
+maxlen = 500
+epochs = 6
+batch_size = 12
+bert_layers = 12
 learing_rate = 1e-5  # bert_layers越小，学习率应该要越大
-crf_lr_multiplier = 1000  # 必要时扩大CRF层的学习率
+crf_lr_multiplier = 1500  # 必要时扩大CRF层的学习率
 
-config_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_config.json'
-checkpoint_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/bert_model.ckpt'
-dict_path = './chinese_roberta_wwm_large_ext_L-24_H-1024_A-16/vocab.txt'
+config_path = './chinese_wwm_L-12_H-768_A-12/bert_config.json'
+checkpoint_path = './chinese_wwm_L-12_H-768_A-12/bert_model.ckpt'
+dict_path = './chinese_wwm_L-12_H-768_A-12/vocab.txt'
 
 # print(tf.test.is_gpu_available())
 # print(tf.config.list_physical_devices('GPU'))
@@ -47,46 +48,39 @@ CRF = ConditionalRandomField(lr_multiplier=crf_lr_multiplier)  # CRF层本质上
 tokenizer = Tokenizer(dict_path, do_lower_case=True)
 # 标注数据
 loader = tcm.TCM()
-
+model_list =[]
 
 def train():
-    train_data = loader.load_data('./round1_train/data/train.txt')  # 第一个维度为所有训练样本中句子个数，第二个维度是每个句子所包含的(实体，类别)数
-    valid_data = loader.load_data('./round1_train/data/val.txt')
+    for i in range(5):
+        train_data = loader.load_data('./round1_train/data/train_%s.txt' % i)  # 第一个维度为所有训练样本中句子个数，第二个维度是每个句子所包含的(实体，类别)数
+        valid_data = loader.load_data('./round1_train/data/val_%s.txt' % i)
 
-    global train_generator
-    train_generator = generator.Generator(train_data=train_data, batch_size=batch_size,
-                                          tokenizer=tokenizer, maxlen=maxlen, label2id=loader.label2id)
-
-    global model
-    model = build_transformer_model(
-        config_path,
-        checkpoint_path,
-    )                                                   # 根据bert_model.ckpt和bert_config.json文件构建transformer模型
-
-    output_layer = 'Transformer-%s-FeedForward-Norm' % (bert_layers - 1)
-    output = model.get_layer(output_layer).output  # shape=(None, None, 768)
-    output = Dense(loader.num_labels)(output)      # 27分类，13类*(B+I)+O
-
-    output = CRF(output)
-
-    model = Model(model.input, output)
-    model.summary()
-
-    model.compile(
-        loss=CRF.sparse_loss,
-        optimizer=Adam(learing_rate),
-        metrics=[CRF.sparse_accuracy]
-    )
-
-    NER = models.NamedEntityRecognizer(trans=K.eval(CRF.trans), starts=[0], ends=[0])
-    evaluate = evaluator.Evaluator(valid_data, tokenizer, model, NER, CRF, loader)
-
-    model.fit_generator(
-        train_generator.forfit(),
-        steps_per_epoch=len(train_generator),
-        epochs=epochs,
-        callbacks=[evaluate]
-    )
+        train_generator = generator.Generator(train_data=train_data, batch_size=batch_size,
+                                              tokenizer=tokenizer, maxlen=maxlen, label2id=loader.label2id)
+        model = build_transformer_model(
+            config_path,
+            checkpoint_path,
+        )                                                   # 根据bert_model.ckpt和bert_config.json文件构建transformer模型
+        output_layer = 'Transformer-%s-FeedForward-Norm' % (bert_layers - 1)
+        output = model.get_layer(output_layer).output  # shape=(None, None, 768)
+        output = Dense(loader.num_labels)(output)      # 27分类，13类*(B+I)+O
+        output = CRF(output)
+        model = Model(model.input, output)
+        # model.summary()
+        model.compile(
+            loss=CRF.sparse_loss,
+            optimizer=Adam(learing_rate),
+            metrics=[CRF.sparse_accuracy]
+        )
+        model_list.append(model)
+        NER = models.NamedEntityRecognizer(trans=K.eval(CRF.trans), starts=[0], ends=[0])
+        evaluate = evaluator.Evaluator(valid_data, tokenizer, model, NER, CRF, loader)
+        model.fit_generator(
+            train_generator.forfit(),
+            steps_per_epoch=len(train_generator),
+            epochs=epochs,
+            callbacks=[evaluate]
+        )
 
 
 def verify():
@@ -143,15 +137,15 @@ def tcm_test():
 
 
 def predict_test(data, NER_):
-    test_ner =[]
+    test_ner = []
 
     for text in tqdm(data):
-        cut_text_list, cut_index_list = train_generator.cut_test_set([text], maxlen)  # 将文本分成多个句子
+        cut_text_list, cut_index_list = cut_test_set([text], maxlen)  # 将文本分成多个句子
         posit = 0
         item_ner = []
         index = 1
         for str_ in cut_text_list:
-            aaaa = NER_.recognize(str_, tokenizer, model, loader)
+            aaaa = NER_.recognize(str_, tokenizer, model_list, loader)
             for tn in aaaa:
                 ans = {}
                 ans["label_type"] = tn[1]

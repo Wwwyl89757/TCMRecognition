@@ -5,7 +5,7 @@ from tqdm import tqdm
 from models import NamedEntityRecognizer
 from bert4keras.layers import ConditionalRandomField
 from tcm import TCM
-
+from keras.models import Model
 
 class Evaluator(keras.callbacks.Callback):
     def __init__(self, valid_data, tokenizer: Tokenizer, model, NER: NamedEntityRecognizer, CRF: ConditionalRandomField, loader: TCM):
@@ -40,7 +40,7 @@ class Evaluator(keras.callbacks.Callback):
         # 保存最优
         if f1 >= self.best_val_f1:
             self.best_val_f1 = f1
-            self.model.save_weights('./best_model_epoch_10.weights')
+            self.model.save_weights('best_model_epoch_10.weights')
         print(
             'valid:  f1: %.5f, precision: %.5f, recall: %.5f, best f1: %.5f\n' %
             (f1, precision, recall, self.best_val_f1)
