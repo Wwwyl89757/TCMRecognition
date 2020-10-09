@@ -1,6 +1,0 @@
-< O
-b O
-r O
-/ O
-> O
-END O

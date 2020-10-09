@@ -25,6 +25,7 @@ import models
 import evaluator
 import tcm
 from data_preprocess import cut_test_set
+
 # import tensorflow.compat.v1 as tf  # 使用1.0版本的方法
 #
 # tf.disable_v2_behavior()  # 禁用2.0版本的方法
@@ -32,7 +33,7 @@ from data_preprocess import cut_test_set
 
 maxlen = 500
 epochs = 6
-batch_size = 12
+batch_size = 16
 bert_layers = 12
 learing_rate = 1e-5  # bert_layers越小，学习率应该要越大
 crf_lr_multiplier = 1500  # 必要时扩大CRF层的学习率

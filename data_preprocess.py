@@ -4,9 +4,12 @@ import os
 import codecs
 import shutil
 import numpy as np
+from nlpcda import Ner
+import tcm
 
-
-text_length = 250
+augument = True
+labels = tcm.TCM().labels
+text_length = 500
 file_list = glob.glob('./round1_train/train/*.txt')
 
 kf = KFold(n_splits=5, shuffle=True, random_state=666).split(file_list)
@@ -115,9 +118,9 @@ def from_ann2dic(r_ann_path, r_txt_path, w_path, w_file):
                         tag = q_dic[i]
                     else:
                         tag = "O"  # 大写字母O
-                    w.write('%s %s\n' % (str_, tag))            # 将.ann中标签拆分成（字符 BIO）写入-new.txt
+                    w.write('%s\t%s\n' % (str_, tag))            # 将.ann中标签拆分成（字符 BIO）写入-new.txt
                 i+=1
-            w.write('%s\n' % "END O")            
+            # w.write('%s\n' % "END O")
 
 def process():
     for i, (train_fold, val_fold) in enumerate(kf):
@@ -155,6 +158,9 @@ def process():
             w_file = file_name
             from_ann2dic(r_ann_path, r_txt_path, w_path, w_file)
         # # 训练集合并
+        if augument:
+            ner = Ner(ner_dir_name="./round1_train/train_new_%s" % i, ignore_tag_list=['O'],
+                      data_augument_tag_list=labels, augument_size=3, seed=0)
         w_path = "./round1_train/data/train_%s.txt" % i
         with codecs.open(w_path, 'w', encoding='utf-8') as f:
             f.seek(0)  # 移动文件读取指针到指定位置
@@ -168,16 +174,28 @@ def process():
             with codecs.open(path, "r", encoding="utf-8") as f:
                 line = f.readline()
                 line = line.strip("\n\r")
-                while line != "END O":
+                end = 0
+                while not end:
+                # while line != "END O":
                     q_list.append(line)
                     line = f.readline()
-                    line = line.strip("\n\r")
+                    if line != '':
+                        line = line.strip("\n\r")
+                    else:
+                        end = 1
+                        break
             print("开始写入文本%s" % w_path)
             with codecs.open(w_path, "a", encoding="utf-8") as f:  # 将train_new中的text合并写入data/train，追加写入
                 for item in q_list:
                     if item.__contains__('\ufeff1'):
                         print("===============")
                     f.write('%s\n' % item)
+
+                if augument:
+                    data_sentence_arrs, data_label_arrs = ner.augment(file_name=path)
+                    for j in range(len(data_sentence_arrs)):
+                        for str_, tag in zip(data_sentence_arrs[j], data_label_arrs[j]):
+                            f.write("%s\t%s\n" % (str_, tag))
                 f.write('\n')
             f.close()
 
@@ -195,10 +213,16 @@ def process():
             with codecs.open(path, "r", encoding="utf-8") as f:
                 line = f.readline()
                 line = line.strip("\n\r")
-                while line != "END O":
+                end = 0
+                while not end:
+                    # while line != "END O":
                     q_list.append(line)
                     line = f.readline()
-                    line = line.strip("\n\r")
+                    if line != '':
+                        line = line.strip("\n\r")
+                    else:
+                        end = 1
+                        break
             print("开始写入文本%s" % w_path)
             with codecs.open(w_path, "a", encoding="utf-8") as f:
                 for item in q_list:

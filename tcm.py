@@ -6,7 +6,7 @@ class TCM:
     def __init__(self):
         # 类别映射
 
-        labels = ['SYMPTOM',
+        self.labels = ['SYMPTOM',
                   'DRUG_EFFICACY',
                   'PERSON_GROUP',
                   'SYNDROME',
@@ -20,9 +20,9 @@ class TCM:
                   'FOOD',
                   'DRUG_GROUP']
 
-        self.id2label = dict(enumerate(labels))  # 建立id到类别名的映射
+        self.id2label = dict(enumerate(self.labels))  # 建立id到类别名的映射
         self.label2id = {j: i for i, j in self.id2label.items()}  # 建立类别名到id的映射
-        self.num_labels = len(labels) * 2 + 1  # 13 * 2 + 1 = 27
+        self.num_labels = len(self.labels) * 2 + 1  # 13 * 2 + 1 = 27
 
     def load_data(self, filename):
         D = []
@@ -34,7 +34,7 @@ class TCM:
                 d, last_flag = [], ''
                 for c in l.split('\n'):  # 划分字符
                     try:
-                        char, this_flag = c.split(' ')
+                        char, this_flag = c.split('\t')
                     except:
                         print(c)
                         continue
